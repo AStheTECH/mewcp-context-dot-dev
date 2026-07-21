@@ -7,12 +7,13 @@ from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from ..service import make_get_request
+from .. import service
+from ..config import CONNECT_TIMEOUT, READ_TIMEOUT
 from ..schemas import BrandData, BrandResult
 from ..logging_utils import ToolLogger
-from ._helpers import _handle_request_exc
+from ._helpers import _handle_request_exc, _upstream_err
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("context-dev-mcp.tools.brand_intelligence")
 
 
 def register_brand_intelligence_tools(mcp: FastMCP) -> None:
@@ -42,12 +43,18 @@ def register_brand_intelligence_tools(mcp: FastMCP) -> None:
             params["maxAgeMs"] = max_age_ms
         if timeout_ms is not None:
             params["timeoutMS"] = timeout_ms
+
         try:
-            raw = make_get_request("/brand/retrieve", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/brand/retrieve", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(BrandResult, tlog, exc)
-        tlog.success()
-        return BrandResult(success=True, statusCode=200, data=BrandData(**raw))
+
+        if 200 <= status < 300:
+            tlog.success()
+            return BrandResult(success=True, statusCode=status, data=BrandData(**data))
+        return _upstream_err(BrandResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="get_brand_by_email",
@@ -74,12 +81,18 @@ def register_brand_intelligence_tools(mcp: FastMCP) -> None:
             params["maxAgeMs"] = max_age_ms
         if timeout_ms is not None:
             params["timeoutMS"] = timeout_ms
+
         try:
-            raw = make_get_request("/brand/retrieve-by-email", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/brand/retrieve-by-email", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(BrandResult, tlog, exc)
-        tlog.success()
-        return BrandResult(success=True, statusCode=200, data=BrandData(**raw))
+
+        if 200 <= status < 300:
+            tlog.success()
+            return BrandResult(success=True, statusCode=status, data=BrandData(**data))
+        return _upstream_err(BrandResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="get_brand_by_name",
@@ -109,12 +122,18 @@ def register_brand_intelligence_tools(mcp: FastMCP) -> None:
             params["maxAgeMs"] = max_age_ms
         if timeout_ms is not None:
             params["timeoutMS"] = timeout_ms
+
         try:
-            raw = make_get_request("/brand/retrieve-by-name", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/brand/retrieve-by-name", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(BrandResult, tlog, exc)
-        tlog.success()
-        return BrandResult(success=True, statusCode=200, data=BrandData(**raw))
+
+        if 200 <= status < 300:
+            tlog.success()
+            return BrandResult(success=True, statusCode=status, data=BrandData(**data))
+        return _upstream_err(BrandResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="identify_brand_from_transaction",
@@ -150,9 +169,15 @@ def register_brand_intelligence_tools(mcp: FastMCP) -> None:
             params["maxSpeed"] = max_speed
         if timeout_ms is not None:
             params["timeoutMS"] = timeout_ms
+
         try:
-            raw = make_get_request("/brand/transaction_identifier", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/brand/transaction_identifier", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(BrandResult, tlog, exc)
-        tlog.success()
-        return BrandResult(success=True, statusCode=200, data=BrandData(**raw))
+
+        if 200 <= status < 300:
+            tlog.success()
+            return BrandResult(success=True, statusCode=status, data=BrandData(**data))
+        return _upstream_err(BrandResult, tlog, status, data, retry_after)

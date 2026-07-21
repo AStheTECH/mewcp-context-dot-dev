@@ -7,7 +7,8 @@ from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from ..service import make_get_request, make_post_request
+from .. import service
+from ..config import CONNECT_TIMEOUT, READ_TIMEOUT
 from ..logging_utils import ToolLogger
 from ..schemas import (
     ScrapeHtmlData,
@@ -23,9 +24,9 @@ from ..schemas import (
     WebSearchData,
     WebSearchResult,
 )
-from ._helpers import _err, _handle_request_exc
+from ._helpers import _err, _handle_request_exc, _upstream_err
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("context-dev-mcp.tools.web_scraping")
 
 
 def register_web_scraping_tools(mcp: FastMCP) -> None:
@@ -67,12 +68,16 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
             params["excludeSelectors"] = [s.strip() for s in exclude_selectors.split(",") if s.strip()]
 
         try:
-            raw = make_get_request("/web/scrape/html", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/scrape/html", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(ScrapeHtmlResult, tlog, exc)
 
-        tlog.success()
-        return ScrapeHtmlResult(success=True, statusCode=200, data=ScrapeHtmlData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return ScrapeHtmlResult(success=True, statusCode=status, data=ScrapeHtmlData(**data))
+        return _upstream_err(ScrapeHtmlResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="scrape_markdown",
@@ -117,12 +122,16 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
             params["excludeSelectors"] = [s.strip() for s in exclude_selectors.split(",") if s.strip()]
 
         try:
-            raw = make_get_request("/web/scrape/markdown", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/scrape/markdown", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(ScrapeMarkdownResult, tlog, exc)
 
-        tlog.success()
-        return ScrapeMarkdownResult(success=True, statusCode=200, data=ScrapeMarkdownData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return ScrapeMarkdownResult(success=True, statusCode=status, data=ScrapeMarkdownData(**data))
+        return _upstream_err(ScrapeMarkdownResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="scrape_screenshot",
@@ -181,12 +190,16 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
             params["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_get_request("/web/screenshot", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/screenshot", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(ScrapeScreenshotResult, tlog, exc)
 
-        tlog.success()
-        return ScrapeScreenshotResult(success=True, statusCode=200, data=ScrapeScreenshotData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return ScrapeScreenshotResult(success=True, statusCode=status, data=ScrapeScreenshotData(**data))
+        return _upstream_err(ScrapeScreenshotResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="scrape_images",
@@ -213,12 +226,16 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
             params["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_get_request("/web/scrape/images", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/scrape/images", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(ScrapeImagesResult, tlog, exc)
 
-        tlog.success()
-        return ScrapeImagesResult(success=True, statusCode=200, data=ScrapeImagesData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return ScrapeImagesResult(success=True, statusCode=status, data=ScrapeImagesData(**data))
+        return _upstream_err(ScrapeImagesResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="crawl_sitemap",
@@ -245,12 +262,16 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
             params["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_get_request("/web/scrape/sitemap", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/scrape/sitemap", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(CrawlSitemapResult, tlog, exc)
 
-        tlog.success()
-        return CrawlSitemapResult(success=True, statusCode=200, data=CrawlSitemapData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return CrawlSitemapResult(success=True, statusCode=status, data=CrawlSitemapData(**data))
+        return _upstream_err(CrawlSitemapResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="web_search",
@@ -294,9 +315,13 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
             body["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_post_request("/web/search", body)
+            data, status, retry_after = service.api_request(
+                "POST", "/web/search", body=body, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(WebSearchResult, tlog, exc)
 
-        tlog.success()
-        return WebSearchResult(success=True, statusCode=200, data=WebSearchData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return WebSearchResult(success=True, statusCode=status, data=WebSearchData(**data))
+        return _upstream_err(WebSearchResult, tlog, status, data, retry_after)

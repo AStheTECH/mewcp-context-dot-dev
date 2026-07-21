@@ -8,12 +8,13 @@ from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
+from .. import service
+from ..config import CONNECT_TIMEOUT, READ_TIMEOUT
 from ..logging_utils import ToolLogger
 from ..schemas import ExtractData, ExtractResult, FontsData, FontsResult, StyleguideData, StyleguideResult
-from ..service import make_get_request, make_post_request
-from ._helpers import _err, _handle_request_exc
+from ._helpers import _err, _handle_request_exc, _upstream_err
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("context-dev-mcp.tools.web_extraction")
 
 
 def register_web_extraction_tools(mcp: FastMCP) -> None:
@@ -68,12 +69,16 @@ def register_web_extraction_tools(mcp: FastMCP) -> None:
             body["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_post_request("/web/extract", body)
+            data, status, retry_after = service.api_request(
+                "POST", "/web/extract", body=body, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(ExtractResult, tlog, exc)
 
-        tlog.success()
-        return ExtractResult(success=True, statusCode=200, data=ExtractData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return ExtractResult(success=True, statusCode=status, data=ExtractData(**data))
+        return _upstream_err(ExtractResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="scrape_styleguide",
@@ -105,12 +110,16 @@ def register_web_extraction_tools(mcp: FastMCP) -> None:
             params["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_get_request("/web/styleguide", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/styleguide", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(StyleguideResult, tlog, exc)
 
-        tlog.success()
-        return StyleguideResult(success=True, statusCode=200, data=StyleguideData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return StyleguideResult(success=True, statusCode=status, data=StyleguideData(**data))
+        return _upstream_err(StyleguideResult, tlog, status, data, retry_after)
 
     @mcp.tool(
         name="scrape_fonts",
@@ -142,9 +151,13 @@ def register_web_extraction_tools(mcp: FastMCP) -> None:
             params["timeoutMS"] = timeout_ms
 
         try:
-            raw = make_get_request("/web/fonts", params)
+            data, status, retry_after = service.api_request(
+                "GET", "/web/fonts", params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT)
+            )
         except Exception as exc:
             return _handle_request_exc(FontsResult, tlog, exc)
 
-        tlog.success()
-        return FontsResult(success=True, statusCode=200, data=FontsData(**raw))
+        if 200 <= status < 300:
+            tlog.success()
+            return FontsResult(success=True, statusCode=status, data=FontsData(**data))
+        return _upstream_err(FontsResult, tlog, status, data, retry_after)
