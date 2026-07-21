@@ -1,0 +1,14 @@
+{
+  "phase_infra": true,
+  "phase_helpers": true,
+  "tool_groups": {
+    "web_scraping": true,
+    "brand_intelligence": true,
+    "web_extraction": true
+  },
+  "phase_init": true,
+  "phase_server": true,
+  "validation_rounds": 2,
+  "validation_passed": true,
+  "readme": true
+}
