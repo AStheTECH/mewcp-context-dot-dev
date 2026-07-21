@@ -68,10 +68,11 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
 
         try:
             raw = make_get_request("/web/scrape/html", params)
-            tlog.success()
-            return ScrapeHtmlResult(success=True, statusCode=200, data=ScrapeHtmlData(**raw))
         except Exception as exc:
             return _handle_request_exc(ScrapeHtmlResult, tlog, exc)
+
+        tlog.success()
+        return ScrapeHtmlResult(success=True, statusCode=200, data=ScrapeHtmlData(**raw))
 
     @mcp.tool(
         name="scrape_markdown",
@@ -117,10 +118,11 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
 
         try:
             raw = make_get_request("/web/scrape/markdown", params)
-            tlog.success()
-            return ScrapeMarkdownResult(success=True, statusCode=200, data=ScrapeMarkdownData(**raw))
         except Exception as exc:
             return _handle_request_exc(ScrapeMarkdownResult, tlog, exc)
+
+        tlog.success()
+        return ScrapeMarkdownResult(success=True, statusCode=200, data=ScrapeMarkdownData(**raw))
 
     @mcp.tool(
         name="scrape_screenshot",
@@ -180,10 +182,11 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
 
         try:
             raw = make_get_request("/web/screenshot", params)
-            tlog.success()
-            return ScrapeScreenshotResult(success=True, statusCode=200, data=ScrapeScreenshotData(**raw))
         except Exception as exc:
             return _handle_request_exc(ScrapeScreenshotResult, tlog, exc)
+
+        tlog.success()
+        return ScrapeScreenshotResult(success=True, statusCode=200, data=ScrapeScreenshotData(**raw))
 
     @mcp.tool(
         name="scrape_images",
@@ -211,10 +214,11 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
 
         try:
             raw = make_get_request("/web/scrape/images", params)
-            tlog.success()
-            return ScrapeImagesResult(success=True, statusCode=200, data=ScrapeImagesData(**raw))
         except Exception as exc:
             return _handle_request_exc(ScrapeImagesResult, tlog, exc)
+
+        tlog.success()
+        return ScrapeImagesResult(success=True, statusCode=200, data=ScrapeImagesData(**raw))
 
     @mcp.tool(
         name="crawl_sitemap",
@@ -242,10 +246,11 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
 
         try:
             raw = make_get_request("/web/scrape/sitemap", params)
-            tlog.success()
-            return CrawlSitemapResult(success=True, statusCode=200, data=CrawlSitemapData(**raw))
         except Exception as exc:
             return _handle_request_exc(CrawlSitemapResult, tlog, exc)
+
+        tlog.success()
+        return CrawlSitemapResult(success=True, statusCode=200, data=CrawlSitemapData(**raw))
 
     @mcp.tool(
         name="web_search",
@@ -290,7 +295,8 @@ def register_web_scraping_tools(mcp: FastMCP) -> None:
 
         try:
             raw = make_post_request("/web/search", body)
-            tlog.success()
-            return WebSearchResult(success=True, statusCode=200, data=WebSearchData(**raw))
         except Exception as exc:
             return _handle_request_exc(WebSearchResult, tlog, exc)
+
+        tlog.success()
+        return WebSearchResult(success=True, statusCode=200, data=WebSearchData(**raw))
