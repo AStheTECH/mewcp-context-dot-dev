@@ -1,124 +1,254 @@
-from typing import TypedDict, Optional
+"""Typed result models for MewCP Context.dev MCP Server."""
+
+from pydantic import BaseModel, ConfigDict
+from typing import Any
 
 
-class KeyMetadata(TypedDict):
+# -----------------------------------------------------------------------------
+# Base classes
+# -----------------------------------------------------------------------------
+
+class ToolError(BaseModel):
+    code: str
+    message: str
+    details: Any = None
+
+
+class ToolResult(BaseModel):
+    success: bool
+    statusCode: int
+    retriable: bool = False
+    retry_after_seconds: int | None = None
+    error: ToolError | None = None
+
+
+# -----------------------------------------------------------------------------
+# Shared nested types
+# -----------------------------------------------------------------------------
+
+class KeyMetadata(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     credits_consumed: int
     credits_remaining: int
 
 
-class PageMetadata(TypedDict, total=False):
-    title: str
-    description: str
-    language: str
-    robots: str
-    ogImage: str
+class PageMetadata(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    title: str | None = None
+    description: str | None = None
+    language: str | None = None
+    robots: str | None = None
+    ogImage: str | None = None
 
 
-class ScrapeHtmlResponse(TypedDict, total=False):
-    success: bool
-    html: str
-    url: str
-    type: str
-    metadata: PageMetadata
-    key_metadata: KeyMetadata
+# -----------------------------------------------------------------------------
+# Web Scraping — scrape_html
+# -----------------------------------------------------------------------------
+
+class ScrapeHtmlData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    success: bool | None = None
+    html: str | None = None
+    url: str | None = None
+    type: str | None = None
+    metadata: PageMetadata | None = None
+    key_metadata: KeyMetadata | None = None
 
 
-class ScrapeMarkdownResponse(TypedDict, total=False):
-    success: bool
-    markdown: str
-    url: str
-    metadata: PageMetadata
-    key_metadata: KeyMetadata
+class ScrapeHtmlResult(ToolResult):
+    data: ScrapeHtmlData | None = None
 
 
-class ScreenshotResponse(TypedDict, total=False):
-    status: str
-    domain: str
-    screenshot: str
-    screenshotType: str
-    width: int
-    height: int
-    code: int
-    key_metadata: KeyMetadata
+# -----------------------------------------------------------------------------
+# Web Scraping — scrape_markdown
+# -----------------------------------------------------------------------------
+
+class ScrapeMarkdownData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    success: bool | None = None
+    markdown: str | None = None
+    url: str | None = None
+    metadata: PageMetadata | None = None
+    key_metadata: KeyMetadata | None = None
 
 
-class ImageItem(TypedDict, total=False):
-    src: str
-    element: str
-    type: str
-    alt: Optional[str]
+class ScrapeMarkdownResult(ToolResult):
+    data: ScrapeMarkdownData | None = None
 
 
-class ScrapeImagesResponse(TypedDict, total=False):
-    success: bool
-    images: list
-    url: str
-    key_metadata: KeyMetadata
+# -----------------------------------------------------------------------------
+# Web Scraping — scrape_screenshot
+# -----------------------------------------------------------------------------
+
+class ScrapeScreenshotData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    status: str | None = None
+    domain: str | None = None
+    screenshot: str | None = None
+    screenshotType: str | None = None
+    width: int | None = None
+    height: int | None = None
+    code: int | None = None
+    key_metadata: KeyMetadata | None = None
 
 
-class SitemapMeta(TypedDict, total=False):
-    sitemapsDiscovered: int
-    sitemapsFetched: int
-    sitemapsSkipped: int
-    errors: int
+class ScrapeScreenshotResult(ToolResult):
+    data: ScrapeScreenshotData | None = None
 
 
-class CrawlSitemapResponse(TypedDict, total=False):
-    success: bool
-    domain: str
-    urls: list
-    meta: SitemapMeta
-    key_metadata: KeyMetadata
+# -----------------------------------------------------------------------------
+# Web Scraping — scrape_images
+# -----------------------------------------------------------------------------
+
+class ImageItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    src: str | None = None
+    element: str | None = None
+    type: str | None = None
+    alt: str | None = None
 
 
-class SearchResult(TypedDict, total=False):
-    url: str
-    title: str
-    description: str
-    relevance: str
-    markdown: dict
+class ScrapeImagesData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    success: bool | None = None
+    images: list[ImageItem] | None = None
+    url: str | None = None
+    key_metadata: KeyMetadata | None = None
 
 
-class WebSearchResponse(TypedDict, total=False):
-    results: list
-    query: str
-    key_metadata: KeyMetadata
+class ScrapeImagesResult(ToolResult):
+    data: ScrapeImagesData | None = None
 
 
-class BrandResponse(TypedDict, total=False):
-    status: str
-    brand: dict
-    code: int
-    key_metadata: KeyMetadata
+# -----------------------------------------------------------------------------
+# Web Scraping — crawl_sitemap
+# -----------------------------------------------------------------------------
+
+class SitemapMeta(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    sitemapsDiscovered: int | None = None
+    sitemapsFetched: int | None = None
+    sitemapsSkipped: int | None = None
+    errors: int | None = None
 
 
-class ExtractResponse(TypedDict, total=False):
-    status: str
-    url: str
-    urls_analyzed: list
-    data: dict
-    metadata: dict
-    key_metadata: KeyMetadata
+class CrawlSitemapData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    success: bool | None = None
+    domain: str | None = None
+    urls: list | None = None
+    meta: SitemapMeta | None = None
+    key_metadata: KeyMetadata | None = None
 
 
-class StyleguideResponse(TypedDict, total=False):
-    status: str
-    domain: str
-    styleguide: dict
-    code: int
-    key_metadata: KeyMetadata
+class CrawlSitemapResult(ToolResult):
+    data: CrawlSitemapData | None = None
 
 
-class FontsResponse(TypedDict, total=False):
-    status: str
-    domain: str
-    fonts: list
-    fontLinks: dict
-    code: int
-    key_metadata: KeyMetadata
+# -----------------------------------------------------------------------------
+# Web Scraping — web_search
+# -----------------------------------------------------------------------------
+
+class SearchResultItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    url: str | None = None
+    title: str | None = None
+    description: str | None = None
+    relevance: str | None = None
+    markdown: dict | None = None
 
 
-class ErrorResponse(TypedDict):
-    error: bool
-    error_code: str
-    message: str
+class WebSearchData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    results: list[SearchResultItem] | None = None
+    query: str | None = None
+    key_metadata: KeyMetadata | None = None
+
+
+class WebSearchResult(ToolResult):
+    data: WebSearchData | None = None
+
+
+# -----------------------------------------------------------------------------
+# Brand Intelligence — get_brand_by_domain, get_brand_by_email,
+# get_brand_by_name, identify_brand_from_transaction (shared shape)
+# -----------------------------------------------------------------------------
+
+class BrandData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    status: str | None = None
+    brand: dict | None = None
+    code: int | None = None
+    key_metadata: KeyMetadata | None = None
+
+
+class BrandResult(ToolResult):
+    data: BrandData | None = None
+
+
+# -----------------------------------------------------------------------------
+# Web Extraction — extract_structured_data
+# -----------------------------------------------------------------------------
+
+class ExtractData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    status: str | None = None
+    url: str | None = None
+    urls_analyzed: list | None = None
+    data: dict | None = None
+    metadata: dict | None = None
+    key_metadata: KeyMetadata | None = None
+
+
+class ExtractResult(ToolResult):
+    data: ExtractData | None = None
+
+
+# -----------------------------------------------------------------------------
+# Web Extraction — scrape_styleguide
+# -----------------------------------------------------------------------------
+
+class StyleguideData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    status: str | None = None
+    domain: str | None = None
+    styleguide: dict | None = None
+    code: int | None = None
+    key_metadata: KeyMetadata | None = None
+
+
+class StyleguideResult(ToolResult):
+    data: StyleguideData | None = None
+
+
+# -----------------------------------------------------------------------------
+# Web Extraction — scrape_fonts
+# -----------------------------------------------------------------------------
+
+class FontsData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    status: str | None = None
+    domain: str | None = None
+    fonts: list | None = None
+    fontLinks: dict | None = None
+    code: int | None = None
+    key_metadata: KeyMetadata | None = None
+
+
+class FontsResult(ToolResult):
+    data: FontsData | None = None

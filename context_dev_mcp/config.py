@@ -1,4 +1,9 @@
+"""Configuration for MewCP Context.dev MCP Server."""
+
 import logging
+
+SERVER_VERSION = "v1.0.0"
+BREAKING_CHANGES: list[dict] = []
 
 CONTEXT_DEV_API_BASE = "https://api.context.dev"
 CONTEXT_DEV_API_VERSION = "v1"

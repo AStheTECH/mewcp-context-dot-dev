@@ -1,14 +1,24 @@
+"""Upstream API client for MewCP Context.dev MCP Server."""
+
 import requests
 from fastmcp_credentials import get_credentials
+
 from context_dev_mcp.config import CONTEXT_DEV_API_BASE, CONTEXT_DEV_API_VERSION, API_TIMEOUT
 
 
 def _api_key() -> str:
-    return get_credentials().fields["api_key"]
+    cred = get_credentials()
+    value = cred.fields.get("api_key") if cred.fields else None
+    if not value:
+        raise ValueError("Missing api_key credential")
+    return value
 
 
 def _auth_headers() -> dict[str, str]:
-    return {"Authorization": f"Bearer {_api_key()}"}
+    return {
+        "Authorization": f"Bearer {_api_key()}",
+        "Content-Type": "application/json",
+    }
 
 
 def _clean(params: dict) -> dict:
@@ -25,53 +35,23 @@ def _clean(params: dict) -> dict:
 
 def make_get_request(endpoint: str, params: dict | None = None) -> dict:
     url = f"{CONTEXT_DEV_API_BASE}/{CONTEXT_DEV_API_VERSION}{endpoint}"
-    try:
-        resp = requests.get(
-            url,
-            headers=_auth_headers(),
-            params=_clean(params or {}),
-            timeout=API_TIMEOUT,
-        )
-        if resp.ok:
-            return resp.json()
-        try:
-            err = resp.json()
-        except Exception:
-            err = {}
-        return {
-            "error": True,
-            "status_code": resp.status_code,
-            "message": err.get("message", resp.text),
-            "error_code": err.get("error_code", "UNKNOWN"),
-        }
-    except requests.Timeout:
-        return {"error": True, "error_code": "REQUEST_TIMEOUT", "message": "Request timed out"}
-    except Exception as e:
-        return {"error": True, "error_code": "INTERNAL_ERROR", "message": str(e)}
+    resp = requests.get(
+        url,
+        headers=_auth_headers(),
+        params=_clean(params or {}),
+        timeout=API_TIMEOUT,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
 def make_post_request(endpoint: str, body: dict) -> dict:
     url = f"{CONTEXT_DEV_API_BASE}/{CONTEXT_DEV_API_VERSION}{endpoint}"
-    try:
-        resp = requests.post(
-            url,
-            headers=_auth_headers(),
-            json=_clean(body),
-            timeout=API_TIMEOUT,
-        )
-        if resp.ok:
-            return resp.json()
-        try:
-            err = resp.json()
-        except Exception:
-            err = {}
-        return {
-            "error": True,
-            "status_code": resp.status_code,
-            "message": err.get("message", resp.text),
-            "error_code": err.get("error_code", "UNKNOWN"),
-        }
-    except requests.Timeout:
-        return {"error": True, "error_code": "REQUEST_TIMEOUT", "message": "Request timed out"}
-    except Exception as e:
-        return {"error": True, "error_code": "INTERNAL_ERROR", "message": str(e)}
+    resp = requests.post(
+        url,
+        headers=_auth_headers(),
+        json=_clean(body),
+        timeout=API_TIMEOUT,
+    )
+    resp.raise_for_status()
+    return resp.json()
