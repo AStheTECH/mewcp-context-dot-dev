@@ -1,12 +1,17 @@
 """Upstream API client for MewCP Context.dev MCP Server."""
 
+import logging
+from typing import Any
+
 import requests
 from fastmcp_credentials import get_credentials
 
-from context_dev_mcp.config import CONTEXT_DEV_API_BASE, CONTEXT_DEV_API_VERSION, API_TIMEOUT
+from context_dev_mcp.config import CONTEXT_DEV_API_BASE, CONNECT_TIMEOUT, READ_TIMEOUT
+
+logger = logging.getLogger("context-dev-mcp.service")
 
 
-def _api_key() -> str:
+def _get_credential() -> str:
     cred = get_credentials()
     value = cred.fields.get("api_key") if cred.fields else None
     if not value:
@@ -16,7 +21,7 @@ def _api_key() -> str:
 
 def _auth_headers() -> dict[str, str]:
     return {
-        "Authorization": f"Bearer {_api_key()}",
+        "Authorization": f"Bearer {_get_credential()}",
         "Content-Type": "application/json",
     }
 
@@ -33,25 +38,35 @@ def _clean(params: dict) -> dict:
     return result
 
 
-def make_get_request(endpoint: str, params: dict | None = None) -> dict:
-    url = f"{CONTEXT_DEV_API_BASE}/{CONTEXT_DEV_API_VERSION}{endpoint}"
-    resp = requests.get(
-        url,
-        headers=_auth_headers(),
-        params=_clean(params or {}),
-        timeout=API_TIMEOUT,
-    )
-    resp.raise_for_status()
-    return resp.json()
+def _parse_retry_after(header: str | None) -> int | None:
+    if not header:
+        return None
+    try:
+        return int(header)
+    except ValueError:
+        return None
 
 
-def make_post_request(endpoint: str, body: dict) -> dict:
-    url = f"{CONTEXT_DEV_API_BASE}/{CONTEXT_DEV_API_VERSION}{endpoint}"
-    resp = requests.post(
-        url,
+def api_request(
+    method: str,
+    endpoint: str,
+    body: dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
+    timeout: tuple[int, int] | None = None,
+) -> tuple[dict[str, Any], int, int | None]:
+    if timeout is None:
+        timeout = (CONNECT_TIMEOUT, READ_TIMEOUT)
+    url = f"{CONTEXT_DEV_API_BASE}{endpoint}"
+    resp = requests.request(
+        method=method,
+        url=url,
         headers=_auth_headers(),
-        json=_clean(body),
-        timeout=API_TIMEOUT,
+        json=_clean(body) if body else None,
+        params=_clean(params) if params else None,
+        timeout=timeout,
     )
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"error": resp.text or "Empty response body"}
+    return data, resp.status_code, _parse_retry_after(resp.headers.get("Retry-After"))

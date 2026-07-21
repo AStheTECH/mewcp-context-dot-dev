@@ -1,5 +1,5 @@
 fastmcp
 fastmcp-credentials>=0.1.1,<0.2.0
+pydantic>=2.0.0
 requests
-python-dotenv
-uvicorn
+python-json-logger>=2.0.0
